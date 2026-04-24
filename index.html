@@ -312,7 +312,7 @@
       <input type="checkbox" name="hook" value="Drama 角色扮演" class="hidden"> 🎭 Drama
     </label>
     <label class="chip cursor-pointer has-[:checked]:chip-on">
-      <input type="checkbox" name="hook" value="由 AI 建議" class="hidden" checked> 🤖 由 AI 建議
+      <input type="checkbox" name="hook" value="由 AI 建議" class="hidden"> 🤖 由 AI 建議
     </label>
   </div>
 </section>
@@ -843,11 +843,30 @@ function onGenerate() {
 
 function onReset() {
   if (!confirm('確定要清空所有填寫？')) return;
+
+  // Text & number inputs → clear
   document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
+
+  // Selects → first option
   document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+
+  // Checkboxes & radios → reset to HTML default (the `checked` attribute)
+  // This fixes Bug B: Interactive 組員版 wasn't reverting to its default unchecked state.
+  document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => {
+    i.checked = i.defaultChecked;
+  });
+
+  // Specific defaults
   document.getElementById('totalTime').value = '45';
+  document.getElementById('preKuhDetails').open = false;
+
+  // Hide output
   document.getElementById('outputArea').classList.add('hidden');
   document.getElementById('outputBlocks').innerHTML = '';
+
+  // Re-sync platform-dependent UI hints
+  updateInteractiveHint();
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
