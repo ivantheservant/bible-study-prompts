@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>查經 Prompt Generator · 串嘴大叔 Ivan × 恩友堂 HBLTCG</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  body { font-family: var(--tw-font-family, inherit); }
+  .section-card { transition: all 0.2s ease; }
+  .section-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+  details > summary { cursor: pointer; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  .chip {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .35rem .75rem; border-radius: 9999px;
+    background: #f1f5f9; color: #475569; font-size: .75rem;
+    border: 1px solid #e2e8f0;
+  }
+  .chip-on {
+    background: #064e3b; color: #d1fae5; border-color: #047857;
+  }
+  .prompt-box {
+    font-family: 'SF Mono', 'Menlo', 'Consolas', 'Courier New', monospace;
+    font-size: 13px; line-height: 1.6;
+    white-space: pre-wrap; word-break: break-word;
+  }
+</style>
+</head>
+<body class="bg-stone-50 text-stone-900 min-h-screen">
+
+<!-- Header -->
+<header class="border-b border-stone-200 bg-white">
+  <div class="max-w-5xl mx-auto px-4 py-6 sm:py-8">
+    <div class="text-xs tracking-[0.3em] text-rose-700 uppercase mb-3">No-Nonsense Gospel</div>
+    <h1 class="text-3xl sm:text-4xl font-serif font-bold text-stone-900">查經 Prompt Generator</h1>
+    <p class="text-sm text-stone-500 mt-2 italic">Bible Study Material Prompt Builder</p>
+    <p class="text-sm text-stone-600 mt-3">
+      基於《查經訓練》（恩友堂）+ OIA · Hook-Book-Look-Took-Cook-Group 查經法
+    </p>
+  </div>
+</header>
+
+<!-- 紅色提示：generator 唔處理經文／釋經 -->
+<div class="max-w-5xl mx-auto px-4 pt-6">
+  <div class="border-l-4 border-rose-600 bg-rose-50 p-4 rounded-r">
+    <p class="text-sm text-stone-700">
+      <strong class="text-rose-800">📣 使用前必讀</strong>：本 generator
+      <strong>唔處理經文同釋經材料</strong>——
+      佢只係為你 build 一條結構化 prompt。<br>
+      用家必須<strong>自備經文（和合本）及釋經材料</strong>（可由釋經書、TheologAI MCP、每日研經叢書抽取），
+      去到目標 AI 平台（ChatGPT／Claude／Gemini／NotebookLM）時連 prompt 一齊提供。
+    </p>
+  </div>
+</div>
+
+<main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+
+<!-- §1 平台 & 版本 -->
+<section class="section-card bg-white border border-stone-200 rounded-lg p-5 sm:p-6">
+  <div class="flex items-start gap-3 mb-4">
+    <div class="text-2xl font-serif text-stone-400 leading-none">§1</div>
+    <div>
+      <h2 class="text-xl font-semibold">平台 & 版本 <span class="text-sm font-normal text-stone-500">Platform & Versions</span></h2>
+      <p class="text-sm text-stone-600 mt-1">揀 AI 平台同要邊啲版本</p>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-2">目標 AI 平台 Target Platform</label>
+      <div class="space-y-2">
+        <label class="flex items-start gap-3 p-3 border border-stone-200 rounded cursor-pointer hover:bg-stone-50 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50">
+          <input type="radio" name="platform" value="general" class="mt-1" checked>
+          <div>
+            <div class="font-medium">General AI Chat</div>
+            <div class="text-xs text-stone-500">ChatGPT / Claude.ai / Gemini — 一條大 prompt，經文釋經 paste 入內</div>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-3 border border-stone-200 rounded cursor-pointer hover:bg-stone-50 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50">
+          <input type="radio" name="platform" value="notebooklm" class="mt-1">
+          <div>
+            <div class="font-medium">NotebookLM</div>
+            <div class="text-xs text-stone-500">輸出 2 部分：Notebook Instructions + Sources TXT 檔</div>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-3 border border-stone-200 rounded cursor-pointer hover:bg-stone-50 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50">
+          <input type="radio" name="platform" value="artifact" class="mt-1">
+          <div>
+            <div class="font-medium">Claude.ai Artifact (HTML 互動)</div>
+            <div class="text-xs text-stone-500">輸出 prompt 會 instruct Claude 生成 React 互動工作紙</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-stone-700 mb-2">輸出版本 Output Versions</label>
+      <div class="space-y-2" id="versionsBox">
+        <label class="flex items-start gap-3 p-3 border border-stone-200 rounded cursor-pointer hover:bg-stone-50 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50">
+          <input type="checkbox" name="versions" value="member" class="mt-1" checked>
+          <div>
+            <div class="font-medium">📘 組員版 Member Version</div>
+            <div class="text-xs text-stone-500">標準 Markdown，問題冇答案</div>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-3 border border-stone-200 rounded cursor-pointer hover:bg-stone-50 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50">
+          <input type="checkbox" name="versions" value="leader" class="mt-1" checked>
+          <div>
+            <div class="font-medium">📗 組長版 Leader Version</div>
+            <div class="text-xs text-stone-500">含建議答案、帶組貼士、組長分享 Slot</div>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-3 border border-stone-200 rounded cursor-pointer hover:bg-stone-50 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50" id="interactiveLabel">
+          <input type="checkbox" name="versions" value="interactive" class="mt-1">
+          <div>
+            <div class="font-medium">📙 Interactive 組員版</div>
+            <div class="text-xs text-stone-500" id="interactiveHint">Markdown Checklist（可喺 Notion／Obsidian 勾選）</div>
+          </div>
+        </label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §2 對象 -->
+<section class="section-card bg-white border border-stone-200 rounded-lg p-5 sm:p-6">
+  <div class="flex items-start gap-3 mb-4">
+    <div class="text-2xl font-serif text-stone-400 leading-none">§2</div>
+    <div>
+      <h2 class="text-xl font-semibold">對象 <span class="text-sm font-normal text-stone-500">Audience</span></h2>
+      <p class="text-sm text-stone-600 mt-1">組員情況 — 用嚟設計合適深度嘅問題同 Cook 範例</p>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">組名 <span class="text-xs text-stone-400">Group Name</span></label>
+      <input type="text" id="groupName" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：恩友堂週五組">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">人數 <span class="text-xs text-stone-400">Size</span></label>
+      <input type="number" id="groupSize" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：8" min="1">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">年齡層 <span class="text-xs text-stone-400">Age Range</span></label>
+      <select id="ageRange" class="w-full border border-stone-300 rounded px-3 py-2 text-sm">
+        <option value="">— 請揀 —</option>
+        <option value="青年（18-35）">青年（18-35）</option>
+        <option value="中年（35-55）">中年（35-55）</option>
+        <option value="長輩（55+）">長輩（55+）</option>
+        <option value="混合年齡層">混合</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">信仰年資 <span class="text-xs text-stone-400">Faith Years</span></label>
+      <select id="faithYears" class="w-full border border-stone-300 rounded px-3 py-2 text-sm">
+        <option value="">— 請揀 —</option>
+        <option value="初信（2年以下）">初信（2年以下）</option>
+        <option value="成長中（2-10年）">成長中（2-10年）</option>
+        <option value="成熟（10年以上）">成熟（10年以上）</option>
+        <option value="信仰年資混合">混合</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">聖經認識程度 <span class="text-xs text-stone-400">Bible Level</span></label>
+      <select id="bibleLevel" class="w-full border border-stone-300 rounded px-3 py-2 text-sm">
+        <option value="">— 請揀 —</option>
+        <option value="淺（少讀經／查經新手）">淺</option>
+        <option value="中（經常靈修／有基本神學）">中</option>
+        <option value="深（熟讀聖經／有神學基礎）">深</option>
+        <option value="聖經認識程度混合">混合</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">主要語言 <span class="text-xs text-stone-400">Language</span></label>
+      <select id="language" class="w-full border border-stone-300 rounded px-3 py-2 text-sm">
+        <option value="">— 請揀 —</option>
+        <option value="粵語（輔助書面繁中）">粵語</option>
+        <option value="國語（輔助書面繁中）">國語</option>
+        <option value="英語（但仍用繁中書面）">英語</option>
+        <option value="語言混合">混合</option>
+      </select>
+    </div>
+    <div class="sm:col-span-2">
+      <label class="block text-sm text-stone-700 mb-1">職業／背景特色 <span class="text-xs text-stone-400">Occupation / Background — 有助設計 Cook 範例</span></label>
+      <input type="text" id="occupation" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：上班族為主／家庭主婦為主／學生／混合">
+    </div>
+  </div>
+</section>
+
+<!-- §3 時間 -->
+<section class="section-card bg-white border border-stone-200 rounded-lg p-5 sm:p-6">
+  <div class="flex items-start gap-3 mb-4">
+    <div class="text-2xl font-serif text-stone-400 leading-none">§3</div>
+    <div>
+      <h2 class="text-xl font-semibold">時間 <span class="text-sm font-normal text-stone-500">Time Allocation</span></h2>
+      <p class="text-sm text-stone-600 mt-1">總時間會影響六階段分配</p>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">總時間（分鐘）<span class="text-xs text-stone-400">Total Duration</span></label>
+      <input type="number" id="totalTime" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="預設 45" min="20" max="120" value="45">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">時間特別要求 <span class="text-xs text-stone-400">Special Time Notes</span></label>
+      <input type="text" id="timeNotes" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：Group 要延長，因上週有組員出事">
+    </div>
+  </div>
+</section>
+
+<!-- §4 主題 -->
+<section class="section-card bg-white border border-stone-200 rounded-lg p-5 sm:p-6">
+  <div class="flex items-start gap-3 mb-4">
+    <div class="text-2xl font-serif text-stone-400 leading-none">§4</div>
+    <div>
+      <h2 class="text-xl font-semibold">主題 <span class="text-sm font-normal text-stone-500">Theme & Passage</span></h2>
+      <p class="text-sm text-stone-600 mt-1">經文唔使 paste 入呢度——只填經文範圍／主題</p>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">經文範圍 <span class="text-xs text-stone-400">Passage Reference</span></label>
+      <input type="text" id="passage" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：利未記 1 章（燔祭）／約翰福音 11 章 1-46 節">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">本段主旨（如已知）<span class="text-xs text-stone-400">Known Main Point (Optional)</span></label>
+      <input type="text" id="mainTheme" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：神主動呼召，邀請選民透過獻祭與祂親近｜可留空讓 AI 從釋經材料提煉">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">系列主題（如屬系列查經）<span class="text-xs text-stone-400">Series Theme (Optional)</span></label>
+      <input type="text" id="seriesTheme" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：利未記 16 段查經系列">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">想帶出嘅核心信息 <span class="text-xs text-stone-400">Core Message Intent (Optional)</span></label>
+      <input type="text" id="coreMessage" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：引導組員反省自己怎樣回應神嘅主動呼召">
+    </div>
+  </div>
+</section>
+
+<!-- §5 特別要求 & 注意事項 -->
+<section class="section-card bg-white border border-stone-200 rounded-lg p-5 sm:p-6">
+  <div class="flex items-start gap-3 mb-4">
+    <div class="text-2xl font-serif text-stone-400 leading-none">§5</div>
+    <div>
+      <h2 class="text-xl font-semibold">特別要求 & 注意事項 <span class="text-sm font-normal text-stone-500">Special Requirements</span></h2>
+      <p class="text-sm text-stone-600 mt-1">關顧組員處境、配合節期／講道系列</p>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">節期／活動配合 <span class="text-xs text-stone-400">Season / Event</span></label>
+      <input type="text" id="festival" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：復活節、受苦節、退修會">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">組員正經歷嘅處境 <span class="text-xs text-stone-400">Member Situations</span></label>
+      <input type="text" id="memberSituation" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：有弟兄近期失業、姊妹喪親">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">配合講道系列 <span class="text-xs text-stone-400">Sermon Series</span></label>
+      <input type="text" id="sermonSeries" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：牧師正講利未記系列">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">避免嘅話題 <span class="text-xs text-stone-400">Topics to Avoid</span></label>
+      <input type="text" id="avoidTopics" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：政治／教會內部爭議">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">要特別照顧嘅組員 <span class="text-xs text-stone-400">Special Care</span></label>
+      <input type="text" id="specialCare" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：有初信組員，避免太深神學用語">
+    </div>
+    <div>
+      <label class="block text-sm text-stone-700 mb-1">組長自己嘅關注 <span class="text-xs text-stone-400">Leader's Concern</span></label>
+      <input type="text" id="leaderConcerns" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：今次帶得緊張／對某節不明白">
+    </div>
+  </div>
+</section>
+
+<!-- §6 Hook 偏好 -->
+<section class="section-card bg-white border border-stone-200 rounded-lg p-5 sm:p-6">
+  <div class="flex items-start gap-3 mb-4">
+    <div class="text-2xl font-serif text-stone-400 leading-none">§6</div>
+    <div>
+      <h2 class="text-xl font-semibold">Hook 偏好 <span class="text-sm font-normal text-stone-500">Hook Preference</span></h2>
+      <p class="text-sm text-stone-600 mt-1">熱身活動類型 — 揀一個或多個</p>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    <label class="chip cursor-pointer has-[:checked]:chip-on">
+      <input type="checkbox" name="hook" value="遊戲" class="hidden"> 🎲 遊戲
+    </label>
+    <label class="chip cursor-pointer has-[:checked]:chip-on">
+      <input type="checkbox" name="hook" value="詩歌" class="hidden"> 🎵 詩歌
+    </label>
+    <label class="chip cursor-pointer has-[:checked]:chip-on">
+      <input type="checkbox" name="hook" value="故事" class="hidden"> 📖 故事
+    </label>
+    <label class="chip cursor-pointer has-[:checked]:chip-on">
+      <input type="checkbox" name="hook" value="生活問題" class="hidden"> 💬 生活問題
+    </label>
+    <label class="chip cursor-pointer has-[:checked]:chip-on">
+      <input type="checkbox" name="hook" value="實物／短片" class="hidden"> 🎬 實物 / 短片
+    </label>
+    <label class="chip cursor-pointer has-[:checked]:chip-on">
+      <input type="checkbox" name="hook" value="Drama 角色扮演" class="hidden"> 🎭 Drama
+    </label>
+    <label class="chip cursor-pointer has-[:checked]:chip-on">
+      <input type="checkbox" name="hook" value="由 AI 建議" class="hidden" checked> 🤖 由 AI 建議
+    </label>
+  </div>
+</section>
+
+<!-- §7 Pre-查（可摺疊） -->
+<section class="section-card bg-white border border-stone-200 rounded-lg">
+  <details id="preKuhDetails">
+    <summary class="p-5 sm:p-6">
+      <div class="flex items-start gap-3">
+        <div class="text-2xl font-serif text-stone-400 leading-none">§7</div>
+        <div class="flex-1">
+          <h2 class="text-xl font-semibold flex items-center gap-2">
+            組長 Pre-查（進階）<span class="text-sm font-normal text-stone-500">Leader Pre-Study</span>
+            <span class="ml-auto text-xs text-stone-400">▼ 按此展開</span>
+          </h2>
+          <p class="text-sm text-stone-600 mt-1">
+            同時生成「Pre-查 Prompt」<strong>俾組長自己先應用經文、找實踐難處、收集見證</strong>——呢個係查經品質嘅關鍵。
+          </p>
+        </div>
+      </div>
+    </summary>
+
+    <div class="px-5 sm:px-6 pb-6 space-y-4 border-t border-stone-100 pt-4">
+      <label class="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded cursor-pointer">
+        <input type="checkbox" id="enablePreKuh" class="mt-1" checked>
+        <div>
+          <div class="font-medium text-emerald-900">同時生成 Pre-查 Prompt</div>
+          <div class="text-xs text-emerald-700">
+            強烈建議剔選。組長用呢個 prompt 自己同 AI 對話，先靈修一次，再產 Pre-查輸出，然後將輸出填入主 prompt 嘅「組長 Pre-查輸出」位置。
+          </div>
+        </div>
+      </label>
+
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm text-stone-700 mb-1">組長處境 <span class="text-xs text-stone-400">Your Situation</span></label>
+          <input type="text" id="leaderSituation" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：近期工作忙、家中有小朋友">
+        </div>
+        <div>
+          <label class="block text-sm text-stone-700 mb-1">屬靈光景 <span class="text-xs text-stone-400">Spiritual State</span></label>
+          <input type="text" id="leaderSpiritual" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：近期靈修斷咗，感到乾枯">
+        </div>
+        <div>
+          <label class="block text-sm text-stone-700 mb-1">帶組年資 <span class="text-xs text-stone-400">Years Leading</span></label>
+          <input type="text" id="yearsLeading" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" placeholder="例：帶呢組 2 年">
+        </div>
+      </div>
+    </div>
+  </details>
+</section>
+
+<!-- Generate Button -->
+<div class="flex flex-col sm:flex-row gap-3 pt-2">
+  <button id="generateBtn" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-4 rounded-lg text-lg transition">
+    🎯 生成 Prompt Generate Prompt
+  </button>
+  <button id="resetBtn" class="sm:w-auto px-6 py-4 border border-stone-300 text-stone-700 hover:bg-stone-100 rounded-lg">
+    🔄 重設 Reset
+  </button>
+</div>
+
+<!-- Output Area -->
+<section id="outputArea" class="hidden space-y-4 pt-4">
+  <div class="border-t border-stone-300 pt-6">
+    <h2 class="text-2xl font-bold mb-4">📋 生成結果 Output</h2>
+    <p class="text-sm text-stone-600 mb-4" id="outputHint"></p>
+  </div>
+  <div id="outputBlocks"></div>
+</section>
+
+<!-- Footer -->
+<footer class="pt-8 pb-12 text-center text-xs text-stone-400">
+  <p>v1.0 · 2026-04-23 · 串嘴大叔 Ivan × No-Nonsense Gospel</p>
+  <p class="mt-1">Based on 恩友堂《查經訓練》 + OIA 公開研究</p>
+</footer>
+
+</main>
+
+<script>
+// ============================================================
+// 查經 Prompt Generator · Core Logic
+// ============================================================
+// Architecture:
+//   1. loadSpec()        — fetch spec.md, parse into sections
+//   2. collectFormData() — read form → JS object
+//   3. buildPrompt()     — dispatch by platform, fill placeholders
+//   4. renderOutput()    — render prompt(s) with copy buttons
+// ============================================================
+
+let SPEC = {}; // section name -> content string
+
+// ---------- 1. Load & parse spec.md ----------
+async function loadSpec() {
+  try {
+    const res = await fetch('spec.md?v=' + Date.now()); // bust cache
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    SPEC = parseSpec(text);
+    console.log('✅ spec.md loaded. Sections:', Object.keys(SPEC));
+  } catch (e) {
+    console.error('❌ spec.md load failed:', e);
+    alert('⚠️ 載入 spec.md 失敗：' + e.message + '\n\n請確認 spec.md 同 index.html 放喺同一 folder。');
+  }
+}
+
+/**
+ * Parse spec.md. Sections are `## SECTION_NAME` on own line.
+ * Section content is from the line after the header to the next `## ` header.
+ * @param {string} text - Raw spec.md content
+ * @returns {Object} Map of SECTION_NAME → content string
+ */
+function parseSpec(text) {
+  const sections = {};
+  const lines = text.split(/\r?\n/);
+  let current = null;
+  let buffer = [];
+  for (const line of lines) {
+    const m = line.match(/^##\s+([A-Z_][A-Z0-9_]*)\s*$/);
+    if (m) {
+      if (current) sections[current] = buffer.join('\n').trim();
+      current = m[1];
+      buffer = [];
+    } else if (current) {
+      buffer.push(line);
+    }
+  }
+  if (current) sections[current] = buffer.join('\n').trim();
+  return sections;
+}
+
+// ---------- 2. Collect form data ----------
+/**
+ * Read all form fields into a structured object.
+ * @returns {Object} formData
+ */
+function collectFormData() {
+  const $ = (id) => document.getElementById(id);
+  const platform = document.querySelector('input[name="platform"]:checked').value;
+  const versions = Array.from(document.querySelectorAll('input[name="versions"]:checked')).map(x => x.value);
+  const hooks = Array.from(document.querySelectorAll('input[name="hook"]:checked')).map(x => x.value);
+
+  return {
+    platform,
+    versions,
+    audience: {
+      groupName: $('groupName').value.trim(),
+      size: $('groupSize').value.trim(),
+      ageRange: $('ageRange').value,
+      faithYears: $('faithYears').value,
+      bibleLevel: $('bibleLevel').value,
+      language: $('language').value,
+      occupation: $('occupation').value.trim(),
+    },
+    time: {
+      totalMin: $('totalTime').value.trim() || '45',
+      notes: $('timeNotes').value.trim(),
+    },
+    theme: {
+      passage: $('passage').value.trim(),
+      mainTheme: $('mainTheme').value.trim(),
+      seriesTheme: $('seriesTheme').value.trim(),
+      coreMessage: $('coreMessage').value.trim(),
+    },
+    special: {
+      festival: $('festival').value.trim(),
+      memberSituation: $('memberSituation').value.trim(),
+      sermonSeries: $('sermonSeries').value.trim(),
+      avoidTopics: $('avoidTopics').value.trim(),
+      specialCare: $('specialCare').value.trim(),
+      leaderConcerns: $('leaderConcerns').value.trim(),
+    },
+    hook: hooks,
+    preKuh: {
+      enabled: $('enablePreKuh').checked,
+      leaderSituation: $('leaderSituation').value.trim(),
+      leaderSpiritual: $('leaderSpiritual').value.trim(),
+      yearsLeading: $('yearsLeading').value.trim(),
+    },
+  };
+}
+
+// ---------- 3. Build prompt ----------
+/**
+ * Format audience block as structured text.
+ * @param {Object} aud - audience object
+ * @returns {string}
+ */
+function fmtAudience(aud) {
+  const lines = ['**對象 Audience**：'];
+  if (aud.groupName) lines.push(`- 組名：${aud.groupName}`);
+  if (aud.size) lines.push(`- 人數：${aud.size} 人`);
+  if (aud.ageRange) lines.push(`- 年齡層：${aud.ageRange}`);
+  if (aud.faithYears) lines.push(`- 信仰年資：${aud.faithYears}`);
+  if (aud.bibleLevel) lines.push(`- 聖經認識程度：${aud.bibleLevel}`);
+  if (aud.language) lines.push(`- 主要語言：${aud.language}`);
+  if (aud.occupation) lines.push(`- 職業／背景：${aud.occupation}`);
+  return lines.length > 1 ? lines.join('\n') : '**對象**：（未指定，由 AI 合理推斷）';
+}
+
+function fmtAudienceShort(aud) {
+  const parts = [];
+  if (aud.ageRange) parts.push(aud.ageRange);
+  if (aud.faithYears) parts.push(aud.faithYears);
+  if (aud.bibleLevel) parts.push(aud.bibleLevel);
+  if (aud.size) parts.push(`${aud.size}人`);
+  return parts.length ? parts.join('、') : '未指定';
+}
+
+function fmtAudienceFull(aud) {
+  const lines = [];
+  if (aud.groupName) lines.push(`組名：${aud.groupName}`);
+  if (aud.size) lines.push(`人數：${aud.size} 人`);
+  if (aud.ageRange) lines.push(`年齡層：${aud.ageRange}`);
+  if (aud.faithYears) lines.push(`信仰年資：${aud.faithYears}`);
+  if (aud.bibleLevel) lines.push(`聖經認識程度：${aud.bibleLevel}`);
+  if (aud.language) lines.push(`主要語言：${aud.language}`);
+  if (aud.occupation) lines.push(`職業／背景：${aud.occupation}`);
+  return lines.length ? '對象：\n' + lines.join('\n') : '對象：未指定';
+}
+
+function fmtTime(t) {
+  const lines = [`**時間 Time**：總共 ${t.totalMin} 分鐘`];
+  if (t.notes) lines.push(`- 特別要求：${t.notes}`);
+  return lines.join('\n');
+}
+
+function fmtTimeFull(t) {
+  let s = `時間：${t.totalMin} 分鐘`;
+  if (t.notes) s += `\n時間特別要求：${t.notes}`;
+  return s;
+}
+
+function fmtTheme(th) {
+  const lines = ['**主題 Theme**：'];
+  if (th.passage) lines.push(`- 經文範圍：${th.passage}`);
+  if (th.mainTheme) lines.push(`- 本段主旨（已知）：${th.mainTheme}`);
+  else lines.push(`- 本段主旨：（未指定，請由釋經材料提煉一句話主旨）`);
+  if (th.seriesTheme) lines.push(`- 系列主題：${th.seriesTheme}`);
+  if (th.coreMessage) lines.push(`- 想帶出嘅核心信息：${th.coreMessage}`);
+  return lines.join('\n');
+}
+
+function fmtThemeShort(th) {
+  return th.passage ? th.passage + (th.mainTheme ? `（${th.mainTheme}）` : '') : '未指定經文';
+}
+
+function fmtThemeFull(th) {
+  const lines = [];
+  if (th.passage) lines.push(`經文範圍：${th.passage}`);
+  if (th.mainTheme) lines.push(`本段主旨（已知）：${th.mainTheme}`);
+  if (th.seriesTheme) lines.push(`系列主題：${th.seriesTheme}`);
+  if (th.coreMessage) lines.push(`核心信息意圖：${th.coreMessage}`);
+  return lines.length ? '主題：\n' + lines.join('\n') : '主題：未指定';
+}
+
+function fmtSpecial(sp) {
+  const lines = [];
+  if (sp.festival) lines.push(`- 節期／活動：${sp.festival}`);
+  if (sp.memberSituation) lines.push(`- 組員處境：${sp.memberSituation}`);
+  if (sp.sermonSeries) lines.push(`- 講道系列：${sp.sermonSeries}`);
+  if (sp.avoidTopics) lines.push(`- 避免話題：${sp.avoidTopics}`);
+  if (sp.specialCare) lines.push(`- 要特別照顧嘅組員：${sp.specialCare}`);
+  if (sp.leaderConcerns) lines.push(`- 組長自己關注：${sp.leaderConcerns}`);
+  if (lines.length === 0) return '**特別要求 Special**：（無特別要求）';
+  return '**特別要求 Special**：\n' + lines.join('\n');
+}
+
+function fmtSpecialShort(sp) {
+  const parts = [];
+  if (sp.festival) parts.push(`節期：${sp.festival}`);
+  if (sp.memberSituation) parts.push(`組員處境：${sp.memberSituation}`);
+  if (sp.specialCare) parts.push(`特別照顧：${sp.specialCare}`);
+  return parts.length ? '特別要求：' + parts.join('；') : '';
+}
+
+function fmtSpecialFull(sp) {
+  const lines = [];
+  if (sp.festival) lines.push(`節期／活動：${sp.festival}`);
+  if (sp.memberSituation) lines.push(`組員處境：${sp.memberSituation}`);
+  if (sp.sermonSeries) lines.push(`講道系列：${sp.sermonSeries}`);
+  if (sp.avoidTopics) lines.push(`避免話題：${sp.avoidTopics}`);
+  if (sp.specialCare) lines.push(`特別照顧：${sp.specialCare}`);
+  if (sp.leaderConcerns) lines.push(`組長關注：${sp.leaderConcerns}`);
+  return lines.length ? '特別要求及注意事項：\n' + lines.join('\n') : '特別要求：無';
+}
+
+function fmtHook(hooks) {
+  if (hooks.length === 0) return '**Hook 偏好 Hook Preference**：由 AI 建議';
+  return `**Hook 偏好 Hook Preference**：${hooks.join('、')}`;
+}
+
+function fmtHookFull(hooks) {
+  if (hooks.length === 0) return 'Hook 偏好：由 AI 建議';
+  return `Hook 偏好：${hooks.join('、')}`;
+}
+
+/**
+ * Build the "versions list" line, e.g. "1. 📘 組員版  2. 📗 組長版".
+ */
+function fmtVersionsList(versions) {
+  const map = {
+    member: '📘 組員版 Member Version',
+    leader: '📗 組長版 Leader Version',
+    interactive: '📙 Interactive 組員版 Member Interactive',
+  };
+  return versions.map((v, i) => `${i + 1}. ${map[v]}`).join('\n');
+}
+
+function fmtVersionsShort(versions) {
+  return versions.length + ' 個';
+}
+
+/**
+ * Concatenate the selected VERSION_BLOCK_* sections from SPEC.
+ */
+function buildVersionBlocks(versions) {
+  const keyMap = {
+    member: 'VERSION_BLOCK_MEMBER',
+    leader: 'VERSION_BLOCK_LEADER',
+    interactive: 'VERSION_BLOCK_INTERACTIVE_MD',
+  };
+  return versions.map(v => SPEC[keyMap[v]] || '').join('\n\n═══════════════════════════════════════\n\n');
+}
+
+/**
+ * Simple placeholder interpolation. Replaces all {{KEY}} with map[KEY].
+ * @param {string} template
+ * @param {Object} map
+ * @returns {string}
+ */
+function interpolate(template, map) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => map[key] !== undefined ? map[key] : `{{${key}}}`);
+}
+
+/**
+ * Main dispatcher. Returns array of {title, content, kind} for rendering.
+ */
+function buildPrompt(f) {
+  const common = {
+    AUDIENCE_BLOCK: fmtAudience(f.audience),
+    AUDIENCE_SHORT: fmtAudienceShort(f.audience),
+    AUDIENCE_FULL: fmtAudienceFull(f.audience),
+    TIME_BLOCK: fmtTime(f.time),
+    TIME_FULL: fmtTimeFull(f.time),
+    THEME_BLOCK: fmtTheme(f.theme),
+    THEME_SHORT: fmtThemeShort(f.theme),
+    THEME_FULL: fmtThemeFull(f.theme),
+    SPECIAL_BLOCK: fmtSpecial(f.special),
+    SPECIAL_SHORT_OPT: fmtSpecialShort(f.special),
+    SPECIAL_FULL: fmtSpecialFull(f.special),
+    HOOK_PREFERENCE: fmtHook(f.hook),
+    HOOK_FULL: fmtHookFull(f.hook),
+    VERSIONS_LIST: fmtVersionsList(f.versions),
+    VERSIONS_SHORT: fmtVersionsShort(f.versions),
+    VERSION_BLOCKS: buildVersionBlocks(f.versions),
+    RULES_COMMON: SPEC.RULES_COMMON || '',
+    TOTAL_TIME: f.time.totalMin,
+    PASSAGE_SLOT: '（⚠️ 請喺此處貼入經文和合本全文，然後刪除此提示）',
+    COMMENTARY_SLOT: '（⚠️ 請喺此處貼入釋經材料，然後刪除此提示）',
+    PRE_KUH_SLOT: '（若有用 Pre-查 Prompt，將輸出貼入此處；若無則寫「此次未做 Pre-查」）',
+    LEADER_SITUATION: f.preKuh.leaderSituation || '（請自行填寫）',
+    LEADER_SPIRITUAL: f.preKuh.leaderSpiritual || '（請自行填寫）',
+    YEARS_LEADING: f.preKuh.yearsLeading || '（請自行填寫）',
+  };
+
+  const outputs = [];
+
+  // ----- Main prompt by platform -----
+  if (f.platform === 'general') {
+    outputs.push({
+      title: '📝 General AI Prompt',
+      subtitle: 'ChatGPT / Claude.ai / Gemini — 貼入對話框，記得補上經文同釋經材料',
+      content: interpolate(SPEC.PROMPT_GENERAL_BASE || '', common),
+      kind: 'prompt',
+    });
+  } else if (f.platform === 'notebooklm') {
+    outputs.push({
+      title: '📝 NotebookLM — Notebook Instructions',
+      subtitle: '貼入 NotebookLM 嘅「Notebook Instructions」設定（≤500 字）',
+      content: interpolate(SPEC.PROMPT_NOTEBOOKLM_INSTRUCTIONS || '', common),
+      kind: 'prompt',
+    });
+    outputs.push({
+      title: '📄 NotebookLM — Sources TXT',
+      subtitle: '儲存為「!!查經框架_背景.txt」，upload 去 NotebookLM Sources',
+      content: interpolate(SPEC.PROMPT_NOTEBOOKLM_SOURCES_TXT || '', common),
+      kind: 'txt',
+      filename: '!!查經框架_背景.txt',
+    });
+  } else if (f.platform === 'artifact') {
+    outputs.push({
+      title: '📝 Claude.ai Artifact Prompt',
+      subtitle: '貼入 Claude.ai，記得補上經文同釋經材料。Claude 會生成互動 React Artifact',
+      content: interpolate(SPEC.PROMPT_ARTIFACT_REACT || '', common),
+      kind: 'prompt',
+    });
+  }
+
+  // ----- Pre-查 Prompt (optional) -----
+  if (f.preKuh.enabled) {
+    outputs.push({
+      title: '🙏 Pre-查 Prompt（組長自用）',
+      subtitle: '查經前 1 週，組長同 AI 對話用呢個 prompt，先自己應用經文、找難處、記見證。輸出後貼入主 prompt 嘅「組長 Pre-查輸出」位置',
+      content: interpolate(SPEC.PROMPT_PREKUH || '', common),
+      kind: 'prompt',
+      accent: true,
+    });
+  }
+
+  return outputs;
+}
+
+// ---------- 4. Render output ----------
+function renderOutput(blocks, formData) {
+  const container = document.getElementById('outputBlocks');
+  const hint = document.getElementById('outputHint');
+  container.innerHTML = '';
+
+  const platformName = {
+    general: 'General AI Chat',
+    notebooklm: 'NotebookLM',
+    artifact: 'Claude.ai Artifact',
+  }[formData.platform];
+
+  hint.innerHTML = `為 <strong>${platformName}</strong> 生成咗 <strong>${blocks.length}</strong> 份輸出。
+    點擊每個 block 旁邊嘅按鈕複製／下載。`;
+
+  blocks.forEach((b, idx) => {
+    const div = document.createElement('div');
+    div.className = `border rounded-lg overflow-hidden ${b.accent ? 'border-emerald-400 bg-emerald-50/30' : 'border-stone-300 bg-white'}`;
+    div.innerHTML = `
+      <div class="flex items-start justify-between gap-3 p-4 border-b ${b.accent ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50'}">
+        <div>
+          <h3 class="font-semibold text-stone-900">${b.title}</h3>
+          <p class="text-xs text-stone-600 mt-1">${b.subtitle}</p>
+        </div>
+        <div class="flex gap-2 flex-shrink-0">
+          <button data-idx="${idx}" data-action="copy" class="copy-btn px-3 py-1.5 text-sm bg-emerald-700 hover:bg-emerald-800 text-white rounded whitespace-nowrap">
+            📋 Copy
+          </button>
+          ${b.kind === 'txt' ? `<button data-idx="${idx}" data-action="download" class="dl-btn px-3 py-1.5 text-sm bg-stone-700 hover:bg-stone-800 text-white rounded whitespace-nowrap">
+            💾 .txt
+          </button>` : ''}
+        </div>
+      </div>
+      <div class="p-4 prompt-box max-h-96 overflow-y-auto bg-stone-50">${escapeHtml(b.content)}</div>
+    `;
+    container.appendChild(div);
+  });
+
+  // Attach button handlers
+  container.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      const action = btn.dataset.action;
+      const block = blocks[idx];
+      if (action === 'copy') copyToClipboard(block.content, btn);
+      else if (action === 'download') downloadText(block.content, block.filename || 'output.txt');
+    });
+  });
+
+  document.getElementById('outputArea').classList.remove('hidden');
+  document.getElementById('outputArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ 已複製';
+    btn.classList.add('bg-green-600');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('bg-green-600'); }, 1500);
+  }).catch(err => {
+    alert('複製失敗：' + err.message);
+  });
+}
+
+function downloadText(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---------- Platform-dependent UI adjustments ----------
+function updateInteractiveHint() {
+  const platform = document.querySelector('input[name="platform"]:checked').value;
+  const hint = document.getElementById('interactiveHint');
+  if (platform === 'artifact') {
+    hint.textContent = 'Artifact 平台嘅 Interactive 版會由 Claude 直接建立 React HTML 工作紙';
+  } else if (platform === 'notebooklm') {
+    hint.textContent = 'NotebookLM 會輸出 Markdown Checklist（可喺 Notion／Obsidian 勾選）';
+  } else {
+    hint.textContent = 'Markdown Checklist（可喺 Notion／Obsidian 勾選）';
+  }
+}
+
+// ---------- Event handlers ----------
+function onGenerate() {
+  const f = collectFormData();
+
+  // Validation
+  if (f.versions.length === 0 && f.platform !== 'artifact') {
+    alert('⚠️ 請至少揀一個輸出版本（組員版／組長版／Interactive）。');
+    return;
+  }
+  if (f.platform === 'artifact' && !f.versions.includes('interactive')) {
+    // Artifact 本身就係 interactive 版 — 自動修正
+    f.versions = ['interactive'];
+  }
+
+  if (!SPEC.PROMPT_GENERAL_BASE) {
+    alert('⚠️ Spec 未載入完成，請刷新頁面重試。');
+    return;
+  }
+
+  const blocks = buildPrompt(f);
+  renderOutput(blocks, f);
+}
+
+function onReset() {
+  if (!confirm('確定要清空所有填寫？')) return;
+  document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
+  document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+  document.getElementById('totalTime').value = '45';
+  document.getElementById('outputArea').classList.add('hidden');
+  document.getElementById('outputBlocks').innerHTML = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---------- Init ----------
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSpec();
+  document.getElementById('generateBtn').addEventListener('click', onGenerate);
+  document.getElementById('resetBtn').addEventListener('click', onReset);
+  document.querySelectorAll('input[name="platform"]').forEach(r => r.addEventListener('change', updateInteractiveHint));
+  updateInteractiveHint();
+});
+</script>
+
+</body>
+</html>
