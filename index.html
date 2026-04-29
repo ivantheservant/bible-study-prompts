@@ -27,6 +27,10 @@
     font-family: 'SF Mono', 'Menlo', 'Consolas', 'Courier New', monospace;
     font-size: 13px; line-height: 1.6;
     white-space: pre-wrap; word-break: break-word;
+    /* Ensure manual select+copy always works as last resort */
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
   }
 </style>
 </head>
@@ -782,15 +786,80 @@ function escapeHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function copyToClipboard(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.innerHTML;
-    btn.innerHTML = '✅ 已複製';
-    btn.classList.add('bg-green-600');
-    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('bg-green-600'); }, 1500);
-  }).catch(err => {
-    alert('複製失敗：' + err.message);
-  });
+/**
+ * Copy text to clipboard with fallback for restricted environments.
+ * Uses async navigator.clipboard.writeText() (modern API).
+ * Falls back to document.execCommand('copy') via temporary textarea when:
+ * - Browser blocks clipboard API
+ * - Permissions-Policy header restricts it
+ * - Running in non-secure context
+ *
+ * Pattern verified working from another Ivan project (event-design generator).
+ */
+async function copyToClipboard(text, btn) {
+  const orig = btn.innerHTML;
+
+  // Try modern API first
+  try {
+    await navigator.clipboard.writeText(text);
+    showCopySuccess(btn, orig);
+    return;
+  } catch (e) {
+    console.warn('navigator.clipboard failed, trying fallback:', e.message);
+  }
+
+  // Fallback: temporary textarea + execCommand
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  // Position off-screen but still selectable
+  ta.style.position = 'fixed';
+  ta.style.top = '0';
+  ta.style.left = '0';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+
+  try {
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (ok) {
+      showCopySuccess(btn, orig);
+    } else {
+      showCopyFail(btn, orig);
+    }
+  } catch (e) {
+    document.body.removeChild(ta);
+    console.error('execCommand copy also failed:', e);
+    showCopyFail(btn, orig);
+  }
+}
+
+function showCopySuccess(btn, orig) {
+  btn.innerHTML = '✅ 已複製';
+  btn.classList.add('bg-green-600');
+  setTimeout(() => {
+    btn.innerHTML = orig;
+    btn.classList.remove('bg-green-600');
+  }, 1500);
+}
+
+function showCopyFail(btn, orig) {
+  btn.innerHTML = '❌ 請手動選取';
+  btn.classList.add('bg-red-600');
+  // Auto-select the prompt text in the visible box so user can Ctrl+C manually
+  const promptBox = btn.closest('.border').querySelector('.prompt-box');
+  if (promptBox) {
+    const range = document.createRange();
+    range.selectNodeContents(promptBox);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  setTimeout(() => {
+    btn.innerHTML = orig;
+    btn.classList.remove('bg-red-600');
+  }, 3000);
 }
 
 function downloadText(text, filename) {
